@@ -6,7 +6,7 @@
 /*   By: dbonilla <dbonilla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/24 11:36:05 by dbonilla          #+#    #+#             */
-/*   Updated: 2025/03/25 01:11:10 by dbonilla         ###   ########.fr       */
+/*   Updated: 2025/03/26 20:15:06 by dbonilla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ BitcoinExchange &BitcoinExchange::operator=(const BitcoinExchange &rhs)
 
 BitcoinExchange::~BitcoinExchange()
 {
-    std::cout << "BitcoinExchange destructor called" << std::endl;
+    // std::cout << "BitcoinExchange destructor called" << std::endl;
 }
 
 const char *BitcoinExchange::ExceptionNotOpenFile::what() const throw()
@@ -53,23 +53,25 @@ const char *BitcoinExchange::ExceptionDayToEarlyFuture::what() const throw()
     return (" date is too early or too far in the future.");
 }
 
-void BitcoinExchange::loadDatabase(const std::string &filename) {
+void BitcoinExchange::loadDatabase(const std::string &filename) 
+{
     std::ifstream file(filename.c_str());
     if (!file)
         throw ExceptionNotOpenFile();
 
     std::string line;
-    std::getline(file, line); // skip header
-
-    while (std::getline(file, line)) {
+    std::getline(file, line);
+    while (std::getline(file, line)) 
+    {
         std::stringstream ss(line);
         std::string date, rateStr;
-        if (std::getline(ss, date, ',') && std::getline(ss, rateStr)) {
+        if (std::getline(ss, date, ',') && std::getline(ss, rateStr)) 
+        {
             float rate = std::atof(rateStr.c_str());
             _data[date] = rate;
-        } else {
+        } else 
             throw ExceptionBadFormat();
-        }
+        
     }
 }
 
@@ -94,43 +96,32 @@ bool BitcoinExchange::isValidDate(const std::string &date)
     int month = std::atoi(date.substr(5, 2).c_str());
     int day = std::atoi(date.substr(8, 2).c_str());
 
-    if ((year < 2009 || month < 1 || month > 12 || day < 1 )||((year > 2022 || month > 3 || day > 29)))
-        return(0);
-        // throw BitcoinExchange::ExceptionDayToEarlyFuture();
+    if ((year < 2009 || month < 1 || month > 12 || day < 1 )|| \
+        ((year >= 2022 && month >= 3 && day >= 29)))
+        return(throw ExceptionDayToEarlyFuture(), 0);
     int daysInMonth[] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
     if (month == 2 && ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0))
         daysInMonth[2] = 29;
-
     if (day > daysInMonth[month])
         return (0);
-
     return (1);
 }
 
-bool BitcoinExchange::parseInputLine(const std::string &line, std::string &date, float& value) {
+bool BitcoinExchange::parseInputLine(const std::string &line, std::string &date, float& value) 
+{
     std::istringstream ss(line);
     std::cout << line << std::endl;
     std::string separator;
-    if (!(ss >> date >> separator >> value)) {
-        std::cerr << "Error: bad input => " << line << std::endl;
-        return (0);
-    }
-    if (separator != "|") {
-        std::cerr << "Error: bad input => " << line << std::endl;
-        return (0);
-    }
-    if (!isValidDate(date)) {
-        std::cerr << "Error: bad input => " << line << std::endl;
-        return (0);
-    }
-    if (value < 0) {
-        std::cerr << "Error: not a positive number." << std::endl;
-        return (0);
-    }
-    if (value > 1000) {
-        std::cerr << "Error: too large a number." << std::endl;
-        return (0);
-    }
+    if (!(ss >> date >> separator >> value))
+        return (std::cerr << "Error: bad input => " << line << std::endl, 0);
+    if (separator != "|")
+        return (std::cerr << "Error: bad input => " << line << std::endl, 0);
+    if (!isValidDate(date))
+        return (std::cerr << "Error: bad input => " << std::endl, 0);
+    if (value < 0)
+        return (std::cerr << "Error: not a positive number." << std::endl, 0);
+    if (value > 1000)
+        return (std::cerr << "Error: too large a number." << std::endl, 0);
     return (1);
 }
 
@@ -153,11 +144,14 @@ void BitcoinExchange::process(const std::string& inputFile) {
         if (!parseInputLine(line, date, value))
             continue;
 
-        try {
+        try 
+        {
             float rate = getExchangeRate(date);
-            float result = value * rate;
+            float result = static_cast<float>(value) * rate;
             std::cout << date << " => " << value << " = " << result << std::endl;
-        } catch (const std::exception &e) {
+        } 
+        catch (const std::exception &e) 
+        {
             std::cerr << "Error: " << e.what() << " for date " << date << std::endl;
         }
     }
